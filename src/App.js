@@ -1,49 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import Container from 'react-bootstrap/Container';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import AppNavbar from './Components/AppNavbar';
-import AdminDashboard from './Components/AdminDashboard';
-import UserDashboard from './Components/UserDashboard'; // User Dashboard for regular users
-import 'bootstrap/dist/css/bootstrap.min.css';
+// src/App.js
+import React, { useContext } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Register from './Register/Register';
-import Login from './Login/Login';
-import Home from './Home/Home';
+import AppNavbar from './Components/AppNavbar/AppNavbar';
+import Login from './pages/Login/Login';
+import Register from './pages/Register/Register';
+import Movies from './pages/Movies/Movies';
+import Home from './pages/Home/Home';
+// import Profile from './pages/Profile/Profile';
+import AdminView from './Components/AdminView/AdminView'; // ✅ Fix import path
+import UserContext from './context/UserContext';
 
 function App() {
-  const [authState, setAuthState] = useState(false);
-  const [userRole, setUserRole] = useState('');
-
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setAuthState(true);
-      const user = JSON.parse(atob(token.split('.')[1])); // Decode JWT to get user data
-      setUserRole(user.role); // Assuming the role is stored in the JWT
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    setAuthState(false);
-    setUserRole('');
-  };
+  const { user } = useContext(UserContext); // ✅ Fix user undefined
 
   return (
-    <Router>
-      <AppNavbar authState={authState} handleLogout={handleLogout} userRole={userRole} />
-      <Container>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login setAuthState={setAuthState} />} />
-          <Route
-            path="/movies"
-            element={authState ? (userRole === 'admin' ? <AdminDashboard /> : <UserDashboard />) : <Login />}
-          />  {/* Admin Route for admins and User Route for regular users */}
-        </Routes>
-      </Container>
-    </Router>
+    <>
+      <AppNavbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        {/* <Route path="/profile" element={<Profile />} /> */}
+        <Route path="/movies" element={<Movies />} />
+        
+        {/* ✅ Admin-only protected route */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            user?.isAdmin ? <AdminView /> : <Navigate to="/" replace />
+          }
+        />
+        
+        {/* Optional: 404 fallback route */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </>
   );
 }
 
